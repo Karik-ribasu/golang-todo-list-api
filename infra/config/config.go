@@ -6,6 +6,8 @@ import (
 
 func ReadConfig() (cfg Config, err error) {
 	viper.AddConfigPath("./")
+	viper.AddConfigPath("../")
+	viper.AddConfigPath("../../")
 	viper.SetConfigName("config")
 	viper.SetConfigType("toml")
 	viper.ReadInConfig()
