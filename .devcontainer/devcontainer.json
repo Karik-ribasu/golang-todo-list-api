@@ -1,0 +1,16 @@
+{
+  "name": "golang-todo-list-api",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "forwardPorts": [5000, 3306],
+  "customizations": {
+    "vscode": {
+      "extensions": ["golang.go"]
+    }
+  },
+  "postCreateCommand": "cp config.docker.toml config.toml && go mod download",
+  "remoteEnv": {
+    "TODO_LISTEN_ADDR": ":5000"
+  }
+}

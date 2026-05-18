@@ -2,4 +2,4 @@
 
 Todo list HTTP API in Go (Echo, MySQL, JWT).
 
-Place `config.toml` at the repository root (and the certificate or key material your config references); those paths are gitignored. Start with `go run .` (server listens on `:5000`).
+Setup, Docker/Dev Container workflows, CI gates, and agent procedures are documented in **`AGENTS.md`** and **`.cursor/skills/go-test-and-ci.md`**. For a quick local run, add `config.toml` at the repo root (gitignored) and start the server with `go run .` (default listen `:5000`).
