@@ -1,0 +1,9 @@
+[db]
+user = "todo"
+passwd = "todo"
+addr = "mysql"
+port = "3306"
+name = "todo"
+
+[app]
+certificate_key_path = "/secrets/private.pem"

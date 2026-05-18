@@ -10,5 +10,5 @@ func Init(e *echo.Echo, loginSiginAppService appServices.LoginSiginAppService) {
 	controller := newLoginSiginController(loginSiginAppService)
 
 	e.POST("/sign-in", controller.handleUserSignIn)
-	e.POST("/log-in", controller.handleUserSignIn)
+	e.POST("/log-in", controller.handleUserLogin)
 }

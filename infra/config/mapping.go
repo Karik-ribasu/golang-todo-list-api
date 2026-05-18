@@ -16,6 +16,7 @@ type Db struct {
 }
 
 type App struct {
-	CertificateKey string          `mapstructure:"certificate_key"`
-	PrivateKey     *rsa.PrivateKey `mapstructure:"_"`
+	CertificateKey     string          `mapstructure:"certificate_key"`
+	CertificateKeyPath string          `mapstructure:"certificate_key_path"`
+	PrivateKey         *rsa.PrivateKey `mapstructure:"-"`
 }

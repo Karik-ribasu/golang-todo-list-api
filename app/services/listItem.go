@@ -10,13 +10,21 @@ import (
 	"github.com/google/uuid"
 )
 
+var (
+	jsonMarshalListItems   = json.Marshal
+	jsonUnmarshalListItems = json.Unmarshal
+)
+
 type listItemAppService struct {
 	listItemDomainService domainServices.ListItemDomainService
 	userDomainService     domainServices.UserDomainService
 }
 
 func newListItemAppService(listItemDomainService domainServices.ListItemDomainService, userDomainService domainServices.UserDomainService) ListItemAppService {
-	return &listItemAppService{listItemDomainService: listItemDomainService}
+	return &listItemAppService{
+		listItemDomainService: listItemDomainService,
+		userDomainService:     userDomainService,
+	}
 }
 
 func (s *listItemAppService) GetListItems(reqData dto.GetListItemsRequest) (resp dto.GetListItemsResponse, err *errors.HttpError) {
@@ -36,12 +44,12 @@ func (s *listItemAppService) GetListItems(reqData dto.GetListItemsRequest) (resp
 		return resp, httpError
 	}
 
-	listItemData, errJSON := json.Marshal(listItem)
+	listItemData, errJSON := jsonMarshalListItems(listItem)
 	if errJSON != nil {
 		return resp, &errors.HttpError{StatusCode: http.StatusInternalServerError, Message: "Internal Server Error"}
 	}
 
-	errJSON = json.Unmarshal(listItemData, &resp)
+	errJSON = jsonUnmarshalListItems(listItemData, &resp)
 	if errJSON != nil {
 		return resp, &errors.HttpError{StatusCode: http.StatusInternalServerError, Message: "Internal Server Error"}
 	}
@@ -62,7 +70,7 @@ func (s *listItemAppService) CreateListItem(reqData dto.CreateListItemRequest) (
 
 	listItemUUID := uuid.New().String()
 	errSQL = s.listItemDomainService.CreateListItem(user.UserID, listItemUUID, reqData.Title, reqData.Description)
-	if err != nil {
+	if errSQL != nil {
 		httpError := errors.SQLErrorCheck(errSQL)
 		return resp, httpError
 	}

@@ -12,6 +12,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var (
+	jwtTokenForUser    = auth.GenerateJWTToken
+	bcryptFromPassword = bcrypt.GenerateFromPassword
+)
+
 type loginSiginAppService struct {
 	userDomainService domainServices.UserDomainService
 	cfg               config.Config
@@ -34,12 +39,10 @@ func (s *loginSiginAppService) LoginUser(reqData dto.LoginRequest) (resp dto.Log
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(reqData.Password))
 	if err != nil {
-		errHttp.StatusCode = http.StatusUnauthorized
-		errHttp.Message = "NickName or Password invalid"
-		return
+		return resp, &errors.HttpError{StatusCode: http.StatusUnauthorized, Message: "NickName or Password invalid"}
 	}
 
-	authToken, err := auth.GenerateJWTToken(s.cfg.App.PrivateKey, user.UserUUID)
+	authToken, err := jwtTokenForUser(s.cfg.App.PrivateKey, user.UserUUID)
 	if err != nil {
 		return resp, &errors.HttpError{StatusCode: http.StatusInternalServerError, Message: "Internal Server Error"}
 	}
@@ -51,7 +54,7 @@ func (s *loginSiginAppService) LoginUser(reqData dto.LoginRequest) (resp dto.Log
 
 func (s *loginSiginAppService) SiginUser(reqData dto.SigninRequest) (errHttp *errors.HttpError) {
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(reqData.Password), 1)
+	hashedPassword, err := bcryptFromPassword([]byte(reqData.Password), 1)
 	if err != nil {
 		return &errors.HttpError{StatusCode: http.StatusInternalServerError, Message: "Internal Server Error"}
 	}

@@ -1,10 +1,10 @@
 package entity
 
 type ListItem struct {
-	ListItemID   int64
-	UserID       int64
-	ListItemUUID string
-	Title        string
-	Description  string
-	Active       bool
+	ListItemID   int64  `json:"-"`
+	UserID       int64  `json:"-"`
+	ListItemUUID string `json:"list_item_uuid"`
+	Title        string `json:"title"`
+	Description  string `json:"description"`
+	Active       bool   `json:"active"`
 }

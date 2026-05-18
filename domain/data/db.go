@@ -7,24 +7,33 @@ import (
 	"github.com/go-sql-driver/mysql"
 )
 
+// openSQL is sql.Open by default; tests may replace it (e.g. sqlmock).
+var openSQL = sql.Open
+
 type conn struct {
 	db *sql.DB
-	tx sql.Tx
 }
 
 func InitDB(cfg config.Config) (dbManager DbManager, err error) {
 	mysqlConfig := mysql.NewConfig()
 	mysqlConfig.User = cfg.Db.User
 	mysqlConfig.Passwd = cfg.Db.Passwd
-	mysqlConfig.Addr = cfg.Db.Addr + "::" + cfg.Db.Port
+	mysqlConfig.Addr = cfg.Db.Addr + ":" + cfg.Db.Port
 	mysqlConfig.DBName = cfg.Db.Name
 
-	conn := conn{}
-	db, err := sql.Open("mysql", mysqlConfig.FormatDSN())
+	db, err := openSQL("mysql", mysqlConfig.FormatDSN())
 	if err != nil {
-		return &conn, err
+		return nil, err
+	}
+	if err = db.Ping(); err != nil {
+		_ = db.Close()
+		return nil, err
 	}
 
-	conn.db = db
-	return &conn, err
+	return &conn{db: db}, nil
+}
+
+// NewManagerFromDB exposes a DbManager backed by an existing pool (for tests).
+func NewManagerFromDB(db *sql.DB) DbManager {
+	return &conn{db: db}
 }

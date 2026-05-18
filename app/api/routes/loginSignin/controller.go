@@ -20,7 +20,7 @@ func (c controller) handleUserSignIn(ctx echo.Context) error {
 	reqData := dto.SigninRequest{}
 	err := ctx.Bind(&reqData)
 	if err != nil {
-		return ctx.JSON(422, `{"error": "Validation error}`)
+		return ctx.JSON(422, `{"error": "Validation error"}`)
 	}
 
 	errHttp := c.loginSiginAppService.SiginUser(reqData)
@@ -35,7 +35,7 @@ func (c controller) handleUserLogin(ctx echo.Context) error {
 	reqData := dto.LoginRequest{}
 	err := ctx.Bind(&reqData)
 	if err != nil {
-		return ctx.JSON(422, `{"error": "Validation error}`)
+		return ctx.JSON(422, `{"error": "Validation error"}`)
 	}
 
 	resp, errHttp := c.loginSiginAppService.LoginUser(reqData)

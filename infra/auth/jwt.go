@@ -2,6 +2,7 @@ package auth
 
 import (
 	"crypto/rsa"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -42,14 +43,16 @@ func GenerateJWTToken(privateKey *rsa.PrivateKey, userUUID string) (token AuthTo
 }
 
 func ParseAndValidateJWTtoken(privateKey *rsa.PrivateKey, tokenString string) (claims CustomClaims, isValid bool, err error) {
-
 	claims = CustomClaims{}
-	_, err = jwt.ParseWithClaims(tokenString, claims, func(jwt *jwt.Token) (interface{}, error) {
-		return privateKey, nil
+	token, err := jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return &privateKey.PublicKey, nil
 	})
 	if err != nil {
 		return claims, false, err
 	}
-
-	return claims, true, nil
+	cc := token.Claims.(*CustomClaims)
+	return *cc, true, nil
 }
