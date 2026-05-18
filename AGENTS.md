@@ -1,91 +1,68 @@
 # AGENTS.md
 
-## Cursor Cloud specific instructions
+## Overview
 
-### Overview
+This is a **Go REST API** for a todo list application using **Echo v4**, **MySQL 8**, and **JWT (RS256)**. The HTTP server listens on `:5000` by default, or on `TODO_LISTEN_ADDR` when set.
 
-This is a **Go REST API** for a todo list application using **Echo v4**, **MySQL**, and **JWT authentication**. It runs on port **5000**.
+Authoritative procedure for agents lives under **`.cursor/agents/`** and **`.cursor/skills/`**.
 
-### Prerequisites (one-time setup per VM)
+## Containerized development
 
-MySQL 8.0 must be installed and running. The app requires:
+### Dev Container (recommended)
 
-1. A running MySQL instance on `localhost:3306`
-2. A `config.toml` file at the project root (gitignored) with DB credentials and an RSA private key
-3. An RSA private key in PKCS#1 format (`-----BEGIN RSA PRIVATE KEY-----`)
+Open the repository in VS Code or Cursor and use **“Dev Container: Reopen in Container”**. The stack is defined in `.devcontainer/` and includes the Go toolchain plus MySQL with `scripts/init.sql` applied on first start.
 
-### Starting MySQL
+After the container is created, `config.toml` is generated from `config.docker.toml` (`postCreateCommand`). Run the API with:
 
 ```bash
-sudo mkdir -p /var/run/mysqld && sudo chown mysql:mysql /var/run/mysqld
-sudo mysqld --user=mysql --datadir=/var/lib/mysql &
-sleep 3
+go run .
 ```
 
-### Database setup
+### Docker Compose (host or CI-like)
 
-```bash
-sudo mysql -u root -e "
-CREATE DATABASE IF NOT EXISTS todolist;
-USE todolist;
-CREATE TABLE IF NOT EXISTS user (
-    user_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_uuid VARCHAR(36) NOT NULL UNIQUE,
-    nick_name VARCHAR(255) NOT NULL UNIQUE,
-    password BLOB NOT NULL,
-    active BOOLEAN DEFAULT TRUE
-);
-CREATE TABLE IF NOT EXISTS list_item (
-    list_item_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    list_item_uuid VARCHAR(36) NOT NULL UNIQUE,
-    user_id BIGINT NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    active BOOLEAN DEFAULT TRUE,
-    FOREIGN KEY (user_id) REFERENCES user(user_id)
-);
-CREATE USER IF NOT EXISTS 'todouser'@'localhost' IDENTIFIED BY 'todopass';
-GRANT ALL PRIVILEGES ON todolist.* TO 'todouser'@'localhost';
-FLUSH PRIVILEGES;
-"
-```
+| Command | Services | API URL |
+|---------|----------|---------|
+| `docker compose up -d` | MySQL + distroless API (image build) | http://localhost:5000 |
+| `docker compose --profile dev up -d` | MySQL + **api-dev** (`go run` in a Go image) | http://localhost:5001 |
 
-### Generating RSA key and config.toml
+Database name: **`todo`**. Credentials match `config.docker.toml` / `config.ci.toml`.
 
-```bash
-openssl genrsa -traditional -out cert.pem 2048
-```
+## Configuration
 
-The `config.toml` should have this structure (both files are gitignored):
+Copy `config.example.toml` to **`config.toml`** (gitignored) or use **`config.ci.toml`** / **`config.docker.toml`** as templates.
 
-```toml
-[db]
-user = "todouser"
-passwd = "todopass"
-addr = "127.0.0.1"
-port = "3306"
-name = "todolist"
+- Either **`app.certificate_key_path`** (PEM file, PKCS#1 RSA private key) or **`app.certificate_key`** (inline PEM) must be set.
+- For local unit tests, the repo ships **`testdata/dev_rsa_private.pem`** (development only).
 
-[app]
-certificate_key = "<PEM key content with \\n for newlines>"
-```
+## Database schema
 
-### Standard commands
+Apply **`scripts/init.sql`** to the `todo` database (Compose mounts it for MySQL; CI runs `mysql ... < scripts/init.sql`).
+
+## Commands
 
 | Action | Command |
 |--------|---------|
-| Build | `go build -o todoapi .` |
-| Run | `go run .` |
-| Lint | `go vet ./...` |
-| Test | `go test ./...` |
+| Lint | `go vet ./...` or `make vet` |
+| Unit tests + 100% module coverage | `make test-unit` |
+| Integration tests | `make test-integration` (needs DB + `config.toml`) |
+| Merge coverage profiles | `make merge-coverage` |
+| Build | `go build -trimpath -ldflags="-s -w" -o bin/todo-api .` |
 | Dependencies | `go mod download` |
 
-### Known code issues (not environment issues)
+## HTTP behavior (sanity)
 
-1. **Global JWT middleware**: The JWT middleware in `initServer.go` is applied to all routes including `/sign-in` and `/log-in`. These public routes return 401 because no `Skipper` is configured. This is a code bug, not an env issue.
-2. **Login route mapping**: In `app/api/routes/loginSignin/route.go`, the `/log-in` route maps to `handleUserSignIn` instead of `handleUserLogin`.
-3. **No test files**: The codebase has zero test files.
+- **JWT** middleware skips **`/sign-in`** and **`/log-in`**; other routes require `Authorization: Bearer <token>`.
+- **`POST /sign-in`** registers a user; **`POST /log-in`** returns a JWT.
 
-### DB address format gotcha
+## CI workflows (GitHub Actions)
 
-In `domain/data/db.go`, the MySQL address is built as `cfg.Db.Addr + "::" + cfg.Db.Port` (note the double colon). The Go MySQL driver interprets this as a TCP address when configured through `mysql.NewConfig()`, so using `127.0.0.1` as `addr` and `3306` as `port` works correctly.
+| Workflow | Purpose |
+|----------|---------|
+| `unit-tests.yml` | `go vet`, unit tests, **100%** statements (`-coverpkg=./...`) |
+| `integration-tests.yml` | MySQL service, schema, unit + `-tags=integration` tests, merged coverage, **100%** total |
+| `build.yml` | `go vet`, static Linux binary artifact |
+| `release.yml` | On `v*` tags: build + **GitHub Release** with binaries |
+
+## DB address format
+
+In `domain/data/db.go`, the DSN address is built as `cfg.Db.Addr + ":" + cfg.Db.Port` for the MySQL driver (TCP).

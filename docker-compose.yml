@@ -34,5 +34,26 @@ services:
       mysql:
         condition: service_healthy
 
+  # Live-reload friendly API (Go toolchain in-container). Use:
+  #   docker compose --profile dev up -d
+  # API listens on host port 5001 to avoid clashing with the distroless `api` service.
+  api-dev:
+    profiles: ["dev"]
+    image: golang:1.20-bookworm
+    working_dir: /workspace
+    volumes:
+      - .:/workspace:cached
+      - ./testdata/dev_rsa_private.pem:/secrets/private.pem:ro
+    ports:
+      - "5001:5000"
+    environment:
+      CGO_ENABLED: "0"
+      TODO_LISTEN_ADDR: ":5000"
+    command: >
+      sh -c "cp config.docker.toml config.toml && go mod download && exec go run ."
+    depends_on:
+      mysql:
+        condition: service_healthy
+
 volumes:
   mysql_data: {}

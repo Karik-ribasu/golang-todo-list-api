@@ -1,0 +1,32 @@
+# Dev Container stack: Go toolchain + MySQL (schema from scripts/init.sql).
+
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: todo
+      MYSQL_USER: todo
+      MYSQL_PASSWORD: todo
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mysql_devcontainer_data:/var/lib/mysql
+      - ../scripts/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+  app:
+    image: golang:1.20-bookworm
+    working_dir: /workspace
+    volumes:
+      - ..:/workspace:cached
+      - ../testdata/dev_rsa_private.pem:/secrets/private.pem:ro
+    command: sleep infinity
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  mysql_devcontainer_data: {}
