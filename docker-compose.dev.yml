@@ -1,0 +1,16 @@
+# Optional compose overlay: Go toolchain + source mount for containerized development.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+# Then: docker compose -f docker-compose.yml -f docker-compose.dev.yml exec dev bash
+
+services:
+  dev:
+    image: golang:1.20-bookworm
+    working_dir: /workspace
+    volumes:
+      - .:/workspace:cached
+    environment:
+      CGO_ENABLED: "0"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command: ["sleep", "infinity"]
