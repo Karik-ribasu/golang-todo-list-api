@@ -16,6 +16,7 @@ type conn struct {
 
 func InitDB(cfg config.Config) (dbManager DbManager, err error) {
 	mysqlConfig := mysql.NewConfig()
+	mysqlConfig.Net = "tcp"
 	mysqlConfig.User = cfg.Db.User
 	mysqlConfig.Passwd = cfg.Db.Passwd
 	mysqlConfig.Addr = cfg.Db.Addr + ":" + cfg.Db.Port

@@ -3,11 +3,29 @@ package data
 import (
 	"database/sql"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/Karik-ribasu/golang-todo-list-api/infra/config"
 )
+
+func TestInitDB_DSNUsesTCPWithHostPort(t *testing.T) {
+	var saw string
+	old := openSQL
+	defer func() { openSQL = old }()
+	openSQL = func(driverName, dataSourceName string) (*sql.DB, error) {
+		saw = dataSourceName
+		return nil, errors.New("open failed")
+	}
+	_, err := InitDB(config.Config{Db: config.Db{User: "u", Passwd: "p", Addr: "10.0.0.5", Port: "3309", Name: "n"}})
+	if err == nil || !strings.Contains(err.Error(), "open failed") {
+		t.Fatalf("err=%v", err)
+	}
+	if !strings.Contains(saw, "tcp(10.0.0.5:3309)") {
+		t.Fatalf("expected tcp DSN, got %q", saw)
+	}
+}
 
 func TestInitDB_OpenError(t *testing.T) {
 	old := openSQL

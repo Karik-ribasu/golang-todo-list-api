@@ -14,6 +14,10 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+      - name: Go vet
+        run: go vet ./...
+      - name: Verify formatting
+        run: make fmt-check
       - name: Run unit tests with full-module coverage
         run: |
           go test ./... -count=1 -coverprofile=coverage-unit.out -covermode=atomic -coverpkg=./...

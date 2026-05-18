@@ -1,4 +1,4 @@
-.PHONY: test-unit test-integration docker-up
+.PHONY: test-unit test-integration docker-up docker-dev-up vet fmt-check
 
 test-unit:
 	go test ./... -count=1 -coverprofile=coverage-unit.out -covermode=atomic -coverpkg=./...
@@ -10,3 +10,12 @@ test-integration:
 
 docker-up:
 	docker compose up --build
+
+docker-dev-up:
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+
+vet:
+	go vet ./...
+
+fmt-check:
+	@if gofmt -l $$(go list -f '{{.Dir}}' ./...) | grep -q .; then gofmt -l $$(go list -f '{{.Dir}}' ./...); exit 1; fi

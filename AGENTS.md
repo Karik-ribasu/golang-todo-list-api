@@ -62,9 +62,12 @@ certificate_key_path = "./testdata/dev_rsa_private.pem"
 | Lint | `go vet ./...` |
 | Test (unit) | `go test ./...` |
 | Test (with coverage) | `make test-unit` |
+| Integration tests | `make test-integration` (needs MySQL + `config.toml`; CI uses `config.ci.toml`) |
+| Dev in Docker (API + DB) | `docker compose up --build` |
+| Dev shell (Go + source + DB) | `make docker-dev-up` then `docker compose -f docker-compose.yml -f docker-compose.dev.yml exec dev bash` |
 | Dependencies | `go mod download` |
 
 ### Notes
 
 - The JWT middleware in `initServer.go` has a Skipper that exempts `/sign-in` and `/log-in`.
-- In `domain/data/db.go`, the MySQL address is built as `cfg.Db.Addr + ":" + cfg.Db.Port` (single colon, standard format).
+- In `domain/data/db.go`, the DSN uses `Net: "tcp"` and `Addr` as `cfg.Db.Addr + ":" + cfg.Db.Port` so the driver emits `tcp(host:port)/dbname` (required for non-default ports and matches Docker service names such as `mysql:3306`).
