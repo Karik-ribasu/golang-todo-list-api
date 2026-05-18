@@ -36,7 +36,7 @@ func (c controller) postListItem(ctx echo.Context) error {
 	reqData := dto.CreateListItemRequest{}
 	err := ctx.Bind(&reqData)
 	if err != nil {
-		return ctx.JSON(422, `{"error": "Validation error}`)
+		return ctx.JSON(422, `{"error": "Validation error"}`)
 	}
 	reqData.UserUUID = userUUID
 
@@ -59,7 +59,7 @@ func (c controller) putListItem(ctx echo.Context) error {
 
 	err := ctx.Bind(&reqData)
 	if err != nil {
-		return ctx.JSON(422, `{"error": "Validation error}`)
+		return ctx.JSON(422, `{"error": "Validation error"}`)
 	}
 
 	resp, errHttp := c.listItemService.UpdateListItem(reqData)

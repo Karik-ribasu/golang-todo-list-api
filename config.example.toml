@@ -1,0 +1,10 @@
+[db]
+user = "todo"
+passwd = "todo"
+addr = "127.0.0.1"
+port = "3306"
+name = "todo"
+
+[app]
+# Prefer certificate_key_path for local/docker; alternatively set certificate_key to PEM text.
+certificate_key_path = "./testdata/dev_rsa_private.pem"

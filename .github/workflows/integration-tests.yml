@@ -1,0 +1,53 @@
+name: integration-tests
+
+on:
+  push:
+    branches: [main, development, staging, "cursor/**"]
+  pull_request:
+    branches: [main, development, staging]
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: todo
+          MYSQL_USER: todo
+          MYSQL_PASSWORD: todo
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Install MySQL client
+        run: sudo apt-get update && sudo apt-get install -y default-mysql-client
+      - name: Wait for MySQL
+        run: |
+          for i in $(seq 1 60); do
+            mysqladmin ping -h127.0.0.1 -uroot -proot --silent && exit 0
+            sleep 2
+          done
+          exit 1
+      - name: Apply database schema
+        run: mysql -h127.0.0.1 -uroot -proot todo < scripts/init.sql
+      - name: Prepare configuration
+        run: cp config.ci.toml config.toml
+      - name: Run unit tests (coverage profile)
+        run: go test ./... -count=1 -coverprofile=coverage-unit.out -covermode=atomic -coverpkg=./...
+      - name: Run integration tests (coverage profile)
+        run: go test -tags=integration -count=1 -timeout 5m -coverprofile=coverage-integration.out -covermode=atomic -coverpkg=./... .
+      - name: Merge coverage profiles
+        run: python3 scripts/merge_cover_profiles.py coverage-merged.out coverage-unit.out coverage-integration.out
+      - name: Require 100% statement coverage after merge
+        run: |
+          go tool cover -func=coverage-merged.out | tail -1 | grep -E '100\.0%$'

@@ -1,0 +1,26 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Build release binary
+        run: |
+          mkdir -p dist
+          CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o "dist/todo-api-${GITHUB_REF_NAME}" .
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: "todo-api-release-${{ github.ref_name }}"
+          path: dist/*

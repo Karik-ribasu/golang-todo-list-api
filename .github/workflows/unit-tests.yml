@@ -1,0 +1,22 @@
+name: unit-tests
+
+on:
+  push:
+    branches: [main, development, staging, "cursor/**"]
+  pull_request:
+    branches: [main, development, staging]
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Run unit tests with full-module coverage
+        run: |
+          go test ./... -count=1 -coverprofile=coverage-unit.out -covermode=atomic -coverpkg=./...
+      - name: Require 100% statement coverage (merged profile)
+        run: |
+          go tool cover -func=coverage-unit.out | tail -1 | grep -E '100\.0%$'

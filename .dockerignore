@@ -1,0 +1,7 @@
+# Local development image context
+.git
+.gitignore
+*.md
+.vscode
+coverage*.out
+*.test

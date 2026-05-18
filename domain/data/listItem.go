@@ -36,8 +36,11 @@ func (l listItemRepo) GetListItems(userID int64) (listItems []entity.ListItem, e
 
 		listItems = append(listItems, listItem)
 	}
+	if err = result.Err(); err != nil {
+		return listItems, err
+	}
 
-	return listItems, err
+	return listItems, nil
 }
 
 func (l listItemRepo) CreateListItem(userID int64, listItemUUID, title, description string) (err error) {

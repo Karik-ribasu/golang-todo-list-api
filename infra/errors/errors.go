@@ -18,6 +18,6 @@ func SQLErrorCheck(err error) (httpError *HttpError) {
 	case sql.ErrNoRows:
 		return &HttpError{StatusCode: 404, Message: `{"error": "Not Found"}`}
 	default:
-		return &HttpError{StatusCode: 503, Message: `{error: "Internal Server Error"}`}
+		return &HttpError{StatusCode: 503, Message: `{"error": "Internal Server Error"}`}
 	}
 }
